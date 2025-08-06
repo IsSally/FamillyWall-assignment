@@ -1,6 +1,7 @@
 import requests
 import json
 import re
+from .moderation import is_safe_with_groq
 
 #GROQ_API_KEY = "your-groq-api-key"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -98,5 +99,6 @@ def evaluate_business(business_description, llm_suggestor, tokenizer, nb_suggest
         "suggestions": suggestions,
         "status": "success"
     }
+
 
 
