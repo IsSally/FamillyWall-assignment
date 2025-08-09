@@ -1,0 +1,15 @@
+{
+  "_data_files": [
+    {
+      "filename": "data-00000-of-00001.arrow"
+    }
+  ],
+  "_fingerprint": "9f773b33128a806b",
+  "_format_columns": null,
+  "_format_kwargs": {
+    "device": "cuda"
+  },
+  "_format_type": "torch",
+  "_output_all_columns": false,
+  "_split": "train"
+}

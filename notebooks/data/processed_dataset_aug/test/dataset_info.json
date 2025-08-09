@@ -1,0 +1,55 @@
+{
+  "builder_name": "csv",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "csv",
+  "dataset_size": 1485562,
+  "description": "",
+  "download_checksums": {
+    "/content/FamilyWall-assignment/notebooks/aug_synthetic_data.csv": {
+      "num_bytes": 1432948,
+      "checksum": null
+    }
+  },
+  "download_size": 1432948,
+  "features": {
+    "input_ids": {
+      "feature": {
+        "dtype": "int32",
+        "_type": "Value"
+      },
+      "_type": "List"
+    },
+    "attention_mask": {
+      "feature": {
+        "dtype": "int8",
+        "_type": "Value"
+      },
+      "_type": "List"
+    },
+    "labels": {
+      "feature": {
+        "dtype": "int64",
+        "_type": "Value"
+      },
+      "_type": "List"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 2918510,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 1485562,
+      "num_examples": 11278,
+      "dataset_name": "csv"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}
