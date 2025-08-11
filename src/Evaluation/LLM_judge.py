@@ -1,9 +1,11 @@
-#GROQ_API_KEY = "your-groq-api-key"
+
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 def score_domain2(domain, business_description):
     prompt = f"""
 You are a brand expert evaluating domain names for businesses.
+
+Task: score the domain for the business and ALSO report how confident you are in the score you assigned (not a formula).
 
 Here is the business description:
 "{business_description}"
@@ -19,12 +21,20 @@ Score it based on:
 6. Avoids ambiguity
 
 Each is rated from 1 (Poor) to 5 (Excellent).
+Then:
+- total_score = sum of the six criterion scores (integer 6–30).
+- score = <score/30, rounded to 2 decimals>
+- confidence = your self-rated certainty in the total_score on a 0–1 scale with two decimals, where:
+  0.90–1.00 = extremely confident (clear, unambiguous, strong fit)
+  0.60–0.89 = moderately confident
+  0.30–0.59 = low confidence (ambiguous/weak fit)
+  0.00–0.29 = very low (insufficient info or highly ambiguous)
 
 Return only this JSON format:
 {{
   "domain": "{domain}",
-  "score": <total_score>,
-  "confidence": <score/30, rounded to 2 decimals>
+  "score": <score>,
+  "confidence": <float 0-1 with two decimals>
 }}
 """
 
@@ -55,7 +65,8 @@ Return only this JSON format:
             result = json.loads(json_block)
             return {
                 "domain": result["domain"],
-                "confidence": round(result["score"] / 30, 2)
+                "score": result["score"],
+                "confidence": result["confidence"]
             }
         else:
             raise ValueError("No JSON block found")
@@ -63,51 +74,4 @@ Return only this JSON format:
     except Exception as e:
         print("Error scoring domain:", e)
         print("Response:", response.text)
-        return {"domain": domain, "confidence": 0.0}
-
-#Function to evaluate on the test set using bleu score
-def Evaluate_llm_score_on_dataset(model, tokenizer, test_dataset):
-  scores = []
-
-  if tokenizer.pad_token_id is None:
-    tokenizer.pad_token = tokenizer.eos_token
-
-  device = next(model.parameters()).device
-
-  test_dataset.set_format(
-    type="torch",
-    columns=["input_ids", "attention_mask", "labels"],
-    device=torch.device(device)
-  )
-  model.eval()
-  with torch.inference_mode():
-    for ex in test_dataset:
-        # turn pre-tokenized lists into a 1×seq_len batch
-        ids   = torch.tensor(ex["input_ids"]).unsqueeze(0)
-        mask  = torch.tensor(ex["attention_mask"]).unsqueeze(0)
-        labels = ex["labels"]
-        
-        out_ids = model.generate(
-            input_ids=ids,
-            attention_mask=mask,
-            max_new_tokens=50,
-            num_return_sequences=1,
-            no_repeat_ngram_size=2,
-        )[0]
-
-
-        if (labels == -100).any():
-            labels = labels.clone()
-            labels[labels == -100] = tokenizer.pad_token_id
-
-        # decode
-        ref_ip = tokenizer.decode(ex["input_ids"], skip_special_tokens=True) 
-        pred = tokenizer.decode(out_ids, skip_special_tokens=True)
-        ref = ref_ip.split()
-        hyp = pred.split()
-        scores.append(score_domain2(hyp, ref)['score'])
-
-  # Report
-  avg_score = stats.mean(scores)
-  print(f"The average LLM score: {avg_score}.")
-  return avg_score
+        return {"domain": domain, "score": 0.0, "confidence": 0.0}
