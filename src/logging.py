@@ -50,3 +50,89 @@ class PerfLoggingCallback(TrainerCallback):
             logs[self.prefix + "gpu_mem_used"] = self._gpu_mem_used
             logs[self.prefix + "gpu_util_pct"] = self._gpu_util_pct
         return control
+
+# make sure you have: from importlib import metadata as md
+# and the usual imports: json, time, platform, subprocess, sys, torch, from pathlib import Path
+def _ver(pkg):
+    try:
+        return md.version(pkg)
+    except Exception:
+        return None
+
+def write_model_version(trainer, out_dir, version="1.0.0", seed=None, dataset=None,
+                        train_metrics=None, eval_metrics=None):
+    out = Path(out_dir); out.mkdir(parents=True, exist_ok=True)
+
+    def _last_eval_metrics(state):
+        logs = [d for d in state.log_history if any(k.startswith("eval_") for k in d)]
+        return logs[-1] if logs else {}
+
+    def _last_train_summary(state):
+        # usually the dict that has train_runtime/epoch etc.
+        for d in reversed(state.log_history):
+            if "train_runtime" in d or "train_loss" in d:
+                return d
+        return {}
+
+    # minimal + relevant libs
+    libs = {
+        "python": platform.python_version(),
+        "torch": _ver("torch"),
+        "transformers": _ver("transformers"),
+        "datasets": _ver("datasets"),
+        "tokenizers": _ver("tokenizers"),
+        "peft": _ver("peft"),
+        "accelerate": _ver("accelerate"),
+        "bitsandbytes": _ver("bitsandbytes"),
+        "numpy": _ver("numpy"),
+    }
+
+    # hardware/runtime
+    hw = {
+        "cuda": getattr(torch.version, "cuda", None),
+        "cudnn": torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else None,
+        "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+    }
+
+    # dataset fingerprint
+    ds_fp = None
+    if dataset is not None:
+        if hasattr(dataset, "get"):  # DatasetDict-like
+            tr = dataset.get("train", None)
+            ds_fp = getattr(tr, "_fingerprint", None) if tr is not None else None
+        else:
+            ds_fp = getattr(dataset, "_fingerprint", None)
+
+    metrics_block = {
+        "train": train_metrics or _last_train_summary(trainer.state),
+        "eval": eval_metrics or _last_eval_metrics(trainer.state),
+        "best_metric": getattr(trainer.state, "best_metric", None),
+        "best_model_checkpoint": getattr(trainer.state, "best_model_checkpoint", None),
+        "epoch": getattr(trainer.state, "epoch", None),
+        "global_step": getattr(trainer.state, "global_step", None),
+        "log_history": trainer.state.log_history,
+    }
+
+    meta = {
+        "version": version,
+        "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "libs": libs,
+        "hardware": hw,
+        "seed": seed,
+        "training_args": trainer.args.to_dict(),
+        "metrics": metrics_block,
+        "dataset_fingerprint": ds_fp,
+        "model_config": getattr(trainer.model, "config", None).to_dict()
+                         if hasattr(trainer.model, "config") else None,
+    }
+
+    # ensure JSON-serializable
+    (out / "metadata.json").write_text(json.dumps(meta, indent=2, default=str))
+
+    # freeze env
+    try:
+        req = subprocess.check_output([sys.executable, "-m", "pip", "freeze"], text=True)
+        (out / "requirements_frozen.txt").write_text(req)
+    except Exception:
+        pass
+
