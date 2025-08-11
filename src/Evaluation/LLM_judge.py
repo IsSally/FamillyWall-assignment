@@ -75,3 +75,51 @@ Return only this JSON format:
         print("Error scoring domain:", e)
         print("Response:", response.text)
         return {"domain": domain, "score": 0.0, "confidence": 0.0}
+
+
+def Evaluate_llm_score_on_dataset(model, tokenizer, test_dataset):
+  scores = []
+
+  if tokenizer.pad_token_id is None:
+    tokenizer.pad_token = tokenizer.eos_token
+
+  device = next(model.parameters()).device
+
+  test_dataset.set_format(
+    type="torch",
+    columns=["input_ids", "attention_mask", "labels"],
+    device=torch.device(device)
+  )
+  model.eval()
+  with torch.inference_mode():
+    for ex in test_dataset:
+        # turn pre-tokenized lists into a 1×seq_len batch
+        ids   = torch.tensor(ex["input_ids"]).unsqueeze(0)
+        mask  = torch.tensor(ex["attention_mask"]).unsqueeze(0)
+        labels = ex["labels"]
+        
+        out_ids = model.generate(
+            input_ids=ids,
+            attention_mask=mask,
+            max_new_tokens=50,
+            num_return_sequences=1,
+            no_repeat_ngram_size=2,
+        )[0]
+
+
+        if (labels == -100).any():
+            labels = labels.clone()
+            labels[labels == -100] = tokenizer.pad_token_id
+
+        # decode
+        ref_ip = tokenizer.decode(ex["input_ids"], skip_special_tokens=True) 
+        pred = tokenizer.decode(out_ids, skip_special_tokens=True)
+        ref = ref_ip.split()
+        hyp = pred.split()
+        scores.append(score_domain2(hyp, ref)['score'])
+
+  # Report
+  avg_score = stats.mean(scores)
+  print(f"The average LLM score: {avg_score}.")
+  return avg_score
+
