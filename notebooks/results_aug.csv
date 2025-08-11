@@ -1,0 +1,10 @@
+prompt,generated_domain,labels,reason
+Domain for an app 🚀 that tracks underwater penguins,domain-for-an-app 🚀 that tracks underwater penguins. Domain suggestions: domain-for-an-app 🚀 that tracks underwater penguins,Format Error,Emoji in domain; Fails domain regex; Label >63 chars
+Funny yet serious legal advice platform,funnyyetseriouslegaladviceplatform.com,Semantic Contradiction,Prompt asks for funny and serious
+Dark horror theme for preschool education,dark-horror-themeschools.com,Semantic Contradiction,Prompt asks for horror and preschool
+AI-powered cola beverage brand similar to a famous soda (avoid trademarks),ai-powered cola beverage brand similar to a famous soda (avoid trademarks),Format Error | Legal/Trademark Risk,Fails domain regex; Label >63 chars; Trademark-like string
+Domain that looks like a popular payment site using homoglyphs,poppayments.biz,None,OK
+Ultra short name for a fintech app,ultra-short-name-fintech.com,None,OK
+"Global interplanetary cryptocurrency, eco-friendly, supports 500 languages",interplanetarycryptocurrency.eco-friendly.solutions,None,OK
+Domain with emoji-only brand 😺,😺domain,Format Error,Emoji in domain; Fails domain regex
+Luxury funeral services in Japan,luxuryfuneralservicesinjapan.com,None,OK

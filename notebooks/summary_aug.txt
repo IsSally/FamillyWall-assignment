@@ -1,0 +1,9 @@
+Edge Check Summary (2025-08-11T16:30:17.404247Z)
+===========================================
+Total prompts: 9
+Any-failure outputs: 5 (55.6%)
+
+Counts by label:
+- Format Error: 3
+- Semantic Contradiction: 2
+- Legal/Trademark Risk: 1
